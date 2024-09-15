@@ -1,17 +1,15 @@
 import express from 'express'
+import { getMe, login, logout, signup } from '../controllers/AuthControllers.js'
+import { protedRoute } from '../middleware/protedRoute.js'
 
 const router = express.Router()
 
 
-router.get('/register',(req,res)=>{
-    res.json("abc")
-})
-router.get('/login',(req,res)=>{
-    res.json("abc")
-})
-router.get('/logout',(req,res)=>{
-    res.json("abc")
-})
+
+router.get("/me",protedRoute,getMe)
+router.post('/register',signup)
+router.post('/login',login)
+router.post('/logout',logout)
 
 
 
