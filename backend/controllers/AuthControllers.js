@@ -9,20 +9,20 @@ export const signup = async (req,res)=>{
         
         if(!emailRegex.test(email)){
             return res.status(400).json({message:" Invalid email format"})
-        }
+        }   
 
         const existingUser = await User.findOne({username})
         const existingEmail = await User.findOne({email})
 
         if(existingUser){
-            res.status(400).json({message: "Username already exist"})
+            return res.status(400).json({message: "Username already exist"})
         }
         if(existingEmail){
-            res.status(400).json({message: "Email already exist"})
+            return res.status(400).json({message: "Email already exist"})
         }
 
         if(password.length < 6){
-            res.status(400).json({message: "Password must be as least 6 characters long"})
+            return res.status(400).json({message: "Password must be as least 6 characters long"})
         }
 
         const salt = await bcrypt.genSalt(10)
