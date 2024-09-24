@@ -2,14 +2,16 @@ import { CiImageOn } from "react-icons/ci";
 import { BsEmojiSmileFill } from "react-icons/bs";
 import { useRef, useState } from "react";
 import { IoCloseSharp } from "react-icons/io5";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation,  useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 const CreatePost = () => {
 	const [text, setText] = useState("");
 	const [img, setImg] = useState(null);
 
-	const {mutate: createPost,error,isError } = useMutation({
+	const {data} = useQuery({queryKey: ["authUser"]})
+	const queryClient = useQueryClient()
+	const {mutate: createPost,error,isError,isPending } = useMutation({
 		mutationFn:async()=>{
 			try {
 				const res = await fetch("/api/post/create",{
@@ -17,7 +19,7 @@ const CreatePost = () => {
 					headers: {
 						"Content-Type":"application/json"
 					},
-					body: JSON.stringify(text,img)
+					body: JSON.stringify({text,img})
 				})
 				const data = await res.json()
 				if(!res.ok){
@@ -31,16 +33,13 @@ const CreatePost = () => {
 		},
 		onSuccess:()=>{
 			toast.success("Post created successfully")
+			queryClient.invalidateQueries({queryKey:['posts']})
 		}
 	})
 
 	const imgRef = useRef(null);
 
-	const isPending = false;
 
-	const data = {
-		profileImg: "/avatars/boy1.png",
-	};
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
@@ -57,6 +56,8 @@ const CreatePost = () => {
 			reader.readAsDataURL(file);
 		}
 	};
+
+	console.log(error)
 
 	return (
 		<div className='flex p-4 items-start gap-4 border-b border-gray-700'>
