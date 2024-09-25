@@ -1,10 +1,60 @@
 import { Link } from "react-router-dom";
 import RightPanelSkeleton from "../skeletons/RightPanelSkeleton";
-import { USERS_FOR_RIGHT_PANEL } from "../../utils/db/dummy";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 const RightPanel = () => {
-	const isLoading = false;
 
+	const queryClient = useQueryClient()
+	const {data:suggetedUser,isLoading} = useQuery(({
+		queryKey: ["suggtedUser"],
+		queryFn: async()=>{
+			try {
+				const res = await fetch("/api/user/suggeted")
+				const data = await res.json()
+				if(!res.ok){
+					throw new Error(data.message || "Something went wrong")
+				}
+				return data
+			} catch (error) {
+				throw new Error(error.message)
+			}
+		}
+	}))
+
+	const {mutate: follow, isPending} = useMutation({
+		mutationFn: async(userId)=>{
+			try {
+				const res = await fetch(`/api/user/follow/${userId}`,{
+					method: 'POST'
+				})
+				const data = await res.json()
+
+				if(!res.ok){
+					throw new Error(data.message || "Something went wrong")
+				}
+
+				return data
+			} catch (error) {
+				throw new Error(error)
+			}
+		},
+		onSuccess:()=>{
+			Promise.all([
+				queryClient.invalidateQueries({queryKey: ["authUser"]}),
+				queryClient.invalidateQueries({queryKey: ["suggtedUser"]}),
+			])
+		},
+		onError: (error)=>{
+			toast.error(error.message)
+		}
+	})
+
+
+	if(suggetedUser?.length === 0){
+		return <div className="md:w-64 w-0"></div>
+	}
 	return (
 		<div className='hidden lg:block my-4 mx-2'>
 			<div className='bg-[#16181C] p-4 rounded-md sticky top-2'>
@@ -20,7 +70,7 @@ const RightPanel = () => {
 						</>
 					)}
 					{!isLoading &&
-						USERS_FOR_RIGHT_PANEL?.map((user) => (
+						suggetedUser?.map((user) => (
 							<Link
 								to={`/profile/${user.username}`}
 								className='flex items-center justify-between gap-4'
@@ -42,9 +92,9 @@ const RightPanel = () => {
 								<div>
 									<button
 										className='btn bg-white text-black hover:bg-white hover:opacity-90 rounded-full btn-sm'
-										onClick={(e) => e.preventDefault()}
+										onClick={(e) =>{ e.preventDefault(),follow(user._id)}}
 									>
-										Follow
+										{isPending? <LoadingSpinner size="sm"></LoadingSpinner> : 'Follow'}
 									</button>
 								</div>
 							</Link>
