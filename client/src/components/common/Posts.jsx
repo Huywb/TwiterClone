@@ -4,7 +4,7 @@ import { POSTS } from "../../utils/db/dummy";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-const Posts = ({feedType}) => {
+const Posts = ({feedType,username,userId}) => {
 
 	const getPostEndPoint = ()=>{
 		switch (feedType) {
@@ -12,6 +12,10 @@ const Posts = ({feedType}) => {
 				return "/api/post/all";
 			case "following":
 				return "/api/post/following"
+			case "posts":
+				return `/api/post/user/${username}`
+			case "likes":
+				return `/api/post/likes/${userId}`
 			default:
 				return "/api/post/all";
 		}
@@ -34,7 +38,7 @@ const Posts = ({feedType}) => {
 			}
 		}
 	})
-	console.log(data)
+	console.log('1',data)
 
 	useEffect(()=>{
 		refetch()
@@ -51,7 +55,7 @@ const Posts = ({feedType}) => {
 			{!isLoading && data?.length === 0 && <p className='text-center my-4'>No posts in this tab. Switch 👻</p>}
 			{!isLoading && data && (
 				<div>
-					{data.map((post) => (
+					{data?.map((post) => (
 						<Post key={post._id} post={post} />
 					))}
 				</div>

@@ -165,26 +165,30 @@ export const deletePost = async(req,res)=>{
     }
 }
 
-export const getLikedPosts = async(req,res)=>{
-    const userId = req.params.id
-    try {
+export const getLikedPosts = async (req, res) => {
+	const userId = req.params.id;
 
-        if(!userId){
-            return res.status(400).json({message:"Cannot find user"})
-        }
-        const UserPost = await User.findById(userId).populate('likedPost')
+	try {
+		const user = await User.findById(userId);
+		if (!user) return res.status(404).json({ error: "User not found" });
+        console.log(user)
 
-        if(!UserPost){
-            return res.status(400).json({message:"Cannot get post of user"})
-        }
+		const likedPosts = await Post.find({ _id: { $in: user?.likedPost } })
+			.populate({
+				path: "user",
+				select: "-password",
+			})
+			.populate({
+				path: "comments.user",
+				select: "-password",
+			});
 
-        res.status(200).json(UserPost)
-
-    } catch (error) {
-        console.log(error)
-        res.status(400).json({message:"Internal Server Error"})
-    }
-}
+		res.status(200).json(likedPosts);
+	} catch (error) {
+		console.log("Error in getLikedPosts controller: ", error);
+		res.status(500).json({ error: "Internal server error" });
+	}
+};
 
 export const getFollowingPosts = async(req,res)=>{
     try {

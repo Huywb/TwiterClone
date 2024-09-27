@@ -5,7 +5,7 @@ import cloudinary from 'cloudinary'
 
 
 export const getUserProfile = async(req,res)=>{
-    const {username} = req.params
+    const {username} =  req.params
     try {
         const user = await User.findOne({username}).select('-password')
 
@@ -68,9 +68,10 @@ export const followUnfollowUser = async(req,res)=>{
             })
 
             const newNotification = new Notification({
-                type: 'follow',
+
                 from: req.user._id,
-                to: UserToModify._id
+                to: UserToModify._id,
+                type: 'follow'
 
             })
 
