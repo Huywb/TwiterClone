@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
+import { formatPostDate } from "../../utils/date";
 
 const Post = ({ post }) => {
   const [comment, setComment] = useState("");
@@ -35,24 +36,83 @@ const Post = ({ post }) => {
       queryClient.invalidateQueries({queryKey: ['posts']})
     }
   })
+
+  const {mutate:Likeunlike, isPending:likePending} = useMutation({
+    mutationFn:async()=>{
+      try {
+        const res = await fetch(`/api/post/like/${post._id}`,
+          {method: 'POST'}
+        )
+
+        const data = await res.json()
+
+        if(!res.ok){
+          throw new Error(data.message || "Something went wrong")
+        }
+
+        return data
+      } catch (error) {
+        throw new Error(error.message)
+      }
+    },
+    onSuccess: (data)=>{
+      queryClient.invalidateQueries({queryKey: ["posts"]})
+    },
+    onError: (error)=>{
+      toast.error(error.message)
+    }
+  })
+
+  const {mutate:commentPost, isPending:isCommenting} = useMutation({
+    mutationFn: async()=>{
+      try {
+        const res = await fetch(`/api/post/comment/${post._id}`,{
+          method: "POST",
+          headers: {
+            'Content-Type':"application/json"
+          },
+          body: JSON.stringify({text: comment})
+        })
+        const data = await res.json()
+
+        if(!res.ok){
+          throw new Error(data.message || "Something went wrong")
+        }
+
+        return data
+      } catch (error) {
+        throw new Error(error)
+      }
+    },
+    onSuccess:()=>{
+      toast.success("Commment successfully")
+      setComment('')
+      queryClient.invalidateQueries({queryKey: ['posts']})
+    }
+  })
   const postOwner = post.user;
-  const isLiked = false;
+  const isLiked = post.likes.includes(data._id);
+
+  
 
   const isMyPost = data._id === post.user._id;
 
-  const formattedDate = "1h";
+  const formattedDate = formatPostDate(post.createdAt)
 
-  const isCommenting = false;
 
   const handleDeletePost = () => {
      deletePost()
   };
 
   const handlePostComment = (e) => {
-    e.preventDefault();
+    e.preventDefault()
+    if(isCommenting) return
+    commentPost()
   };
 
-  const handleLikePost = () => {};
+  const handleLikePost = () => {
+    Likeunlike()
+  };
 
   return (
     <>
@@ -186,16 +246,17 @@ const Post = ({ post }) => {
                 className="flex gap-1 items-center group cursor-pointer"
                 onClick={handleLikePost}
               >
-                {!isLiked && (
+                {likePending ? <LoadingSpinner size="sm"></LoadingSpinner> : ''}
+                {!isLiked && !likePending && (
                   <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
                 )}
-                {isLiked && (
+                {isLiked && !likePending &&(
                   <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500 " />
                 )}
 
                 <span
-                  className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-                    isLiked ? "text-pink-500" : ""
+                  className={`text-sm  group-hover:text-pink-500 ${
+                    isLiked ? "text-pink-500" : "text-slate-500"
                   }`}
                 >
                   {post.likes.length}
